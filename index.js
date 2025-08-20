@@ -24,9 +24,17 @@ async function run() {
       .db("HikingInventory")
       .collection("inventoryItems");
 
+    const usersCollection = client.db("HikingInventory").collection("users");
+
     app.get("/items", async (req, res) => {
       const cursor = inventoryItemsCollection.find();
       const result = await cursor.skip(0).limit(8).toArray();
+      res.send(result);
+    });
+
+    app.post("/users", async (req, res) => {
+      const userData = req.body;
+      const result = await usersCollection.insertOne(userData);
       res.send(result);
     });
 
