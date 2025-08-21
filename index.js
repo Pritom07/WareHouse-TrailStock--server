@@ -38,6 +38,22 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/users", async (req, res) => {
+      const userData = req.body;
+      const email = userData.email;
+      const lastSignInTime = userData.lastSignInTime;
+      const method = userData.method;
+      const filter = { userEmail: email };
+      const updateDoc = {
+        $set: {
+          lastSignInTime,
+          method,
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
