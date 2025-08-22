@@ -41,16 +41,55 @@ async function run() {
     app.patch("/users", async (req, res) => {
       const userData = req.body;
       const email = userData.email;
+      const password = userData.password;
       const lastSignInTime = userData.lastSignInTime;
       const method = userData.method;
       const filter = { userEmail: email };
       const updateDoc = {
         $set: {
+          password,
           lastSignInTime,
           method,
         },
       };
       const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    app.put("/users", async (req, res) => {
+      const userData = req.body;
+      const name = userData.name;
+      const email = userData?.email;
+      const github_User_Id = userData?.github_User_Id;
+      const photoURL = userData?.photoURL;
+      const lastSignInTime = userData.lastSignInTime;
+      const creationTime = userData.creationTime;
+      const method = userData.method;
+
+      let filter = {};
+      if (email) {
+        filter = { userEmail: email };
+      } else if (github_User_Id) {
+        filter = { github_User_Id };
+      }
+
+      const updateDoc = {
+        $set: {
+          name,
+          userEmail: email || null,
+          lastSignInTime,
+          creationTime,
+          method,
+          photoURL,
+          github_User_Id: github_User_Id || null,
+        },
+      };
+      const options = { upsert: true };
+      const result = await usersCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
       res.send(result);
     });
 
