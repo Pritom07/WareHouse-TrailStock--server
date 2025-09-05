@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 var cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 3000;
 
 app.use(cors());
@@ -89,6 +89,58 @@ async function run() {
         filter,
         updateDoc,
         options
+      );
+      res.send(result);
+    });
+
+    app.get("/inventoryDetails/:id", async (req, res) => {
+      const ID = req.params.id;
+      const query = { _id: new ObjectId(ID) };
+      const result = await inventoryItemsCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.post("/items/:id", async (req, res) => {
+      const ID = req.params.id;
+      const filter = { _id: new ObjectId(ID) };
+      const desiredDocument = await inventoryItemsCollection.findOne(filter);
+      const quantity = desiredDocument?.quantity;
+      const sold = desiredDocument?.sold;
+      let newQuantity = quantity;
+      let newSold = sold;
+      if (quantity <= 0) {
+        return;
+      } else {
+        newQuantity = quantity - 1;
+        newSold = sold + 1;
+      }
+      const updateDoc = {
+        $set: {
+          quantity: newQuantity,
+          sold: newSold,
+        },
+      };
+      const result = await inventoryItemsCollection.updateOne(
+        filter,
+        updateDoc
+      );
+      res.send(result);
+    });
+
+    app.patch("/items/:id", async (req, res) => {
+      const ID = req.params.id;
+      const Data = req.body.updatedStock;
+      const filter = { _id: new ObjectId(ID) };
+      const desiredData = await inventoryItemsCollection.findOne(filter);
+      const quantity = desiredData.quantity;
+      const updateDoc = {
+        $set: {
+          quantity: quantity + Data,
+        },
+      };
+      const result = await inventoryItemsCollection.updateOne(
+        filter,
+        updateDoc
       );
       res.send(result);
     });
