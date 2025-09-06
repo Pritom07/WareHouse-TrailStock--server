@@ -145,6 +145,32 @@ async function run() {
       res.send(result);
     });
 
+    //Pagination code implemented here. Frontend--->Manageinventories,jsx
+
+    app.get("/totalDoc", async (req, res) => {
+      const result = await inventoryItemsCollection.estimatedDocumentCount();
+      res.send(result);
+    });
+
+    app.get("/allinventories", async (req, res) => {
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
+      const cursor = inventoryItemsCollection
+        .find()
+        .skip(page * size)
+        .limit(size);
+
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.delete("/item/:id", async (req, res) => {
+      const ID = req.params.id;
+      const query = { _id: new ObjectId(ID) };
+      const result = await inventoryItemsCollection.deleteOne(query);
+      res.send(result);
+    });
+
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
