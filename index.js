@@ -171,6 +171,12 @@ async function run() {
       res.send(result);
     });
 
+    app.post("/items", async (req, res) => {
+      const item = req.body;
+      const result = await inventoryItemsCollection.insertOne(item);
+      res.send(result);
+    });
+
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
