@@ -153,10 +153,16 @@ async function run() {
     });
 
     app.get("/allinventories", async (req, res) => {
-      const page = parseInt(req.query.page);
-      const size = parseInt(req.query.size);
+      const page = parseInt(req.query?.page) || 0;
+      const size = parseInt(req.query?.size) || 0;
+      const email = req.query?.email;
+      let query = {};
+      if (email) {
+        query = { addedByEmail: email };
+      }
+
       const cursor = inventoryItemsCollection
-        .find()
+        .find(query)
         .skip(page * size)
         .limit(size);
 
