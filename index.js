@@ -2,11 +2,21 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 var cors = require("cors");
+//JWT setup-1
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 3000;
 
-app.use(cors());
+//JWT setup-2
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    credentials: true,
+  })
+);
 app.use(express.json());
+app.use(cookieParser());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.r5e76.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -18,6 +28,23 @@ const client = new MongoClient(uri, {
   },
 });
 
+//JWT setup-3
+const verifyToken = (req, res, next) => {
+  const token = req?.cookies?.token;
+  if (!token) {
+    return res.status(401).send({ message: "Unauthorized Access" });
+  }
+  jwt.verify(token, process.env.JWT_ACCESS_TOKEN, (err, decoded) => {
+    if (err) {
+      return res
+        .status(401)
+        .send({ message: "Token is not matched or expired" });
+    }
+    req.user = decoded;
+    next();
+  });
+};
+
 async function run() {
   try {
     const inventoryItemsCollection = client
@@ -25,6 +52,27 @@ async function run() {
       .collection("inventoryItems");
 
     const usersCollection = client.db("HikingInventory").collection("users");
+
+    //JWT setup-4
+    app.post("/jwt", async (req, res) => {
+      const userEmail = req.body;
+      const token = jwt.sign(userEmail, process.env.JWT_ACCESS_TOKEN, {
+        expiresIn: "3h",
+      });
+
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: false,
+        })
+        .send({ success: true });
+    });
+
+    //JWT setup-5
+    app.post("/logout", async (req, res) => {
+      res.clearCookie("token");
+      res.send({ success: true });
+    });
 
     app.get("/items", async (req, res) => {
       const cursor = inventoryItemsCollection.find();
@@ -145,14 +193,14 @@ async function run() {
       res.send(result);
     });
 
-    //Pagination code implemented here. Frontend--->Manageinventories,jsx
+    //Pagination code implemented here. Frontend--->Manageinventories.jsx
 
     app.get("/totalDoc", async (req, res) => {
       const result = await inventoryItemsCollection.estimatedDocumentCount();
       res.send(result);
     });
 
-    app.get("/allinventories", async (req, res) => {
+    app.get("/allinventories", verifyToken, async (req, res) => {
       const page = parseInt(req.query?.page) || 0;
       const size = parseInt(req.query?.size) || 0;
       const email = req.query?.email;
