@@ -55,15 +55,21 @@ async function run() {
 
     //JWT setup-4
     app.post("/jwt", async (req, res) => {
-      const userEmail = req.body;
-      const token = jwt.sign(userEmail, process.env.JWT_ACCESS_TOKEN, {
-        expiresIn: "3h",
-      });
+      const userEmail_userGithub = req.body;
+
+      const token = jwt.sign(
+        userEmail_userGithub,
+        process.env.JWT_ACCESS_TOKEN,
+        {
+          expiresIn: "3h",
+        }
+      );
 
       res
         .cookie("token", token, {
           httpOnly: true,
           secure: false,
+          sameSite: "lax",
         })
         .send({ success: true });
     });
@@ -204,9 +210,13 @@ async function run() {
       const page = parseInt(req.query?.page) || 0;
       const size = parseInt(req.query?.size) || 0;
       const email = req.query?.email;
+      const githubID = req.query?.githubID;
+
       let query = {};
-      if (email) {
+      if (email && email !== "null" && email !== "undefined") {
         query = { addedByEmail: email };
+      } else if (githubID && githubID !== "null" && githubID !== "undefined") {
+        query = { githubID };
       }
 
       const cursor = inventoryItemsCollection
@@ -215,6 +225,7 @@ async function run() {
         .limit(size);
 
       const result = await cursor.toArray();
+      console.log(result);
       res.send(result);
     });
 
