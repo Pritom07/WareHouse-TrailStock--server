@@ -12,7 +12,7 @@ const port = process.env.PORT || 3000;
 //JWT setup-2
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: ["http://localhost:5173", "https://trailstock-client.netlify.app"],
     credentials: true,
   })
 );
@@ -69,8 +69,8 @@ async function run() {
       res
         .cookie("token", token, {
           httpOnly: true,
-          secure: false,
-          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         })
         .send({ success: true });
     });
@@ -259,7 +259,6 @@ async function run() {
         .limit(size);
 
       const result = await cursor.toArray();
-      console.log(result);
       res.send(result);
     });
 
