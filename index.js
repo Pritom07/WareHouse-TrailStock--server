@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 var cors = require("cors");
+const nodemailer = require("nodemailer");
 //JWT setup-1
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
@@ -78,6 +79,39 @@ async function run() {
     app.post("/logout", async (req, res) => {
       res.clearCookie("token");
       res.send({ success: true });
+    });
+
+    //Nodemailer configuration to send Email
+    app.post("/feedbackSending", async (req, res) => {
+      const { senderEmail, feedback } = req.body;
+
+      let transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.USER_EMAIL, //use that email where 2-step verification is on and app password is created
+          pass: process.env.APP_PASS,
+        },
+      });
+
+      let mailOptions = {
+        from: process.env.USER_EMAIL, //use that email where 2-step verification is on and app password is created
+        to: process.env.USER_EMAIL, //destenation of the mail
+        replyTo: senderEmail, //who is sending mail
+        subject: `Feedback About our Website "trailstock"`,
+        text: feedback,
+      };
+
+      transporter.sendMail(mailOptions, (err, info) => {
+        if (err) {
+          return res
+            .status(500)
+            .send({ message: "Email Sending failed", sent: false });
+        } else {
+          return res
+            .status(200)
+            .send({ message: "Email Sent Successfully", sent: true });
+        }
+      });
     });
 
     app.get("/items", async (req, res) => {
